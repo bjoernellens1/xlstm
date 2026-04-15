@@ -137,6 +137,22 @@ function scrollToBottom() {
 }
 
 /**
+ * Safely append a labelled info line to a container using DOM API.
+ * @param {HTMLElement} container - Parent element.
+ * @param {string}      label    - Bold label text.
+ * @param {string}      value    - Value text.
+ */
+function appendInfoLine(container, label, value) {
+    if (container.childNodes.length > 0) {
+        container.appendChild(document.createElement("br"));
+    }
+    const strong = document.createElement("strong");
+    strong.textContent = label + ": ";
+    container.appendChild(strong);
+    container.appendChild(document.createTextNode(value));
+}
+
+/**
  * Add a message to the chat and render it.
  * @param {string} role    - "user" or "assistant".
  * @param {string} content - Message text.
@@ -288,13 +304,12 @@ async function loadModel() {
         modelStatusEl.textContent = `${variant} model loaded`;
         sendBtn.disabled = false;
 
-        // Show model info
+        // Show model info using safe DOM API
         modelInfoEl.classList.remove("hidden");
-        modelInfoEl.innerHTML = [
-            `<strong>Parameters:</strong> ${info.parameter_count_human}`,
-            `<strong>Device:</strong> ${info.device}`,
-            `<strong>Vocab:</strong> ${info.vocab_size?.toLocaleString()}`,
-        ].join("<br>");
+        modelInfoEl.textContent = "";
+        appendInfoLine(modelInfoEl, "Parameters", info.parameter_count_human || "—");
+        appendInfoLine(modelInfoEl, "Device", info.device || "—");
+        appendInfoLine(modelInfoEl, "Vocab", info.vocab_size != null ? info.vocab_size.toLocaleString() : "—");
 
     } catch (err) {
         modelStatusEl.className = "status-badge status-offline";
@@ -318,11 +333,10 @@ async function checkModelStatus() {
             sendBtn.disabled = false;
 
             modelInfoEl.classList.remove("hidden");
-            modelInfoEl.innerHTML = [
-                `<strong>Parameters:</strong> ${info.parameter_count_human}`,
-                `<strong>Device:</strong> ${info.device}`,
-                `<strong>Vocab:</strong> ${info.vocab_size?.toLocaleString()}`,
-            ].join("<br>");
+            modelInfoEl.textContent = "";
+            appendInfoLine(modelInfoEl, "Parameters", info.parameter_count_human || "—");
+            appendInfoLine(modelInfoEl, "Device", info.device || "—");
+            appendInfoLine(modelInfoEl, "Vocab", info.vocab_size != null ? info.vocab_size.toLocaleString() : "—");
         }
     } catch {
         // Server might not be ready yet
@@ -343,6 +357,7 @@ function autoResizeInput() {
 
 /**
  * Render a performance metrics bar below a message element.
+ * Uses DOM API (not innerHTML) to avoid XSS risks.
  * @param {HTMLElement} messageEl  - The message DOM element.
  * @param {object}      perf      - Performance data from the server.
  */
@@ -354,21 +369,37 @@ function showPerformanceMetrics(messageEl, perf) {
     const bar = document.createElement("div");
     bar.className = "perf-metrics";
 
-    const items = [];
-    if (perf.tokens_per_second !== undefined) {
-        items.push(`<span class="perf-item">⚡ <strong>${perf.tokens_per_second}</strong> tok/s</span>`);
-    }
-    if (perf.packets_per_second !== undefined) {
-        items.push(`<span class="perf-item">📡 <strong>${perf.packets_per_second}</strong> PPS</span>`);
-    }
-    if (perf.tokens_generated !== undefined) {
-        items.push(`<span class="perf-item">📝 <strong>${perf.tokens_generated}</strong> tokens</span>`);
-    }
-    if (perf.generation_time_s !== undefined) {
-        items.push(`<span class="perf-item">⏱️ <strong>${perf.generation_time_s}</strong>s</span>`);
+    /**
+     * Create a single metric item element safely via DOM API.
+     * @param {string} icon  - Emoji icon.
+     * @param {*}      value - Numeric metric value.
+     * @param {string} unit  - Unit label.
+     * @returns {HTMLElement}
+     */
+    function createMetricItem(icon, value, unit) {
+        const span = document.createElement("span");
+        span.className = "perf-item";
+        span.textContent = icon + " ";
+        const strong = document.createElement("strong");
+        strong.textContent = String(value);
+        span.appendChild(strong);
+        span.appendChild(document.createTextNode(" " + unit));
+        return span;
     }
 
-    bar.innerHTML = items.join("");
+    if (perf.tokens_per_second !== undefined) {
+        bar.appendChild(createMetricItem("⚡", perf.tokens_per_second, "tok/s"));
+    }
+    if (perf.packets_per_second !== undefined) {
+        bar.appendChild(createMetricItem("📡", perf.packets_per_second, "packets/s"));
+    }
+    if (perf.tokens_generated !== undefined) {
+        bar.appendChild(createMetricItem("📝", perf.tokens_generated, "tokens"));
+    }
+    if (perf.generation_time_s !== undefined) {
+        bar.appendChild(createMetricItem("⏱️", perf.generation_time_s, "s"));
+    }
+
     messageEl.appendChild(bar);
     scrollToBottom();
 }

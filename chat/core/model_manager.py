@@ -156,7 +156,7 @@ class ModelManager:
             FileNotFoundError: If checkpoint_path is not set or doesn't exist.
         """
         checkpoint = self.config.model.checkpoint_path
-        if checkpoint:
+        if checkpoint is not None and checkpoint != "":
             from xlstm.xlstm_large.from_pretrained import load_from_pretrained
 
             kernel_kwargs = {}
@@ -221,6 +221,13 @@ class ModelManager:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             logger.info("Previous model unloaded.")
+
+    def unload_model(self) -> None:
+        """Public interface to unload the current model and free resources.
+
+        Safe to call even when no model is loaded.
+        """
+        self._unload_model()
 
     def get_model(self) -> torch.nn.Module:
         """Get the currently loaded model.

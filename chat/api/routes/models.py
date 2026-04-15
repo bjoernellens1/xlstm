@@ -140,5 +140,5 @@ async def unload_model(
     Returns:
         Confirmation message.
     """
-    manager._unload_model()
+    manager.unload_model()
     return {"message": "Model unloaded successfully."}
