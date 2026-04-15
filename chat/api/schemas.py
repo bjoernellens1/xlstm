@@ -80,12 +80,18 @@ class ChatResponse(BaseModel):
     Attributes:
         message: The generated assistant response.
         usage: Token usage statistics.
+        performance: Optional performance metrics (tokens/sec, time, PPS).
     """
 
     message: ChatMessage
     usage: dict[str, Any] = Field(
         default_factory=dict,
         description="Token usage and performance statistics",
+    )
+    performance: Optional[dict[str, Any]] = Field(
+        None,
+        description="Performance metrics: tokens_per_second, generation_time_s, "
+        "packets_per_second (PPS)",
     )
 
 

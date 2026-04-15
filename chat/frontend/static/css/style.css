@@ -478,6 +478,62 @@ body {
     display: none !important;
 }
 
+/* ── Performance Metrics ─────────────────────────────────────────────────── */
+
+.perf-metrics {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 6px 12px;
+    margin-top: 6px;
+    background: rgba(74, 158, 255, 0.06);
+    border: 1px solid rgba(74, 158, 255, 0.12);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.perf-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.perf-item strong {
+    color: var(--accent);
+    font-family: var(--font-mono);
+}
+
+.btn-toggle {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.btn-toggle:hover {
+    background: var(--bg-hover);
+}
+
+.btn-toggle.perf-on {
+    border-color: rgba(74, 158, 255, 0.3);
+    color: var(--accent);
+}
+
+.btn-toggle.perf-off {
+    color: var(--text-muted);
+}
+
+.setting-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {

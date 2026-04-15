@@ -22,9 +22,10 @@ def app_config() -> AppConfig:
 
 @pytest.fixture
 def client(app_config: AppConfig) -> TestClient:
-    """Create a test client with the app."""
+    """Create a test client with the app, triggering lifespan events."""
     app = create_app(app_config)
-    return TestClient(app)
+    with TestClient(app) as c:
+        yield c
 
 
 class TestHealthEndpoint:

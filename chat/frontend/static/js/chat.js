@@ -19,6 +19,7 @@ const state = {
     ws: null,
     isGenerating: false,
     modelLoaded: false,
+    showPerformance: true,
 };
 
 // ── DOM Elements ────────────────────────────────────────────────────────────
@@ -188,6 +189,10 @@ async function sendMessage() {
             if (data.done) {
                 // Update the stored message with complete text
                 state.messages[state.messages.length - 1].content = fullText;
+                // Show performance metrics if available and enabled
+                if (data.performance && state.showPerformance) {
+                    showPerformanceMetrics(assistantEl, data.performance);
+                }
                 cleanup();
                 return;
             }
@@ -245,6 +250,11 @@ async function sendMessageREST(text) {
         lastAssistant.content = response.message.content;
         const lastEl = messagesEl.lastElementChild;
         lastEl.querySelector(".message-content").textContent = response.message.content;
+
+        // Show performance metrics if available and enabled
+        if (response.performance && state.showPerformance) {
+            showPerformanceMetrics(lastEl, response.performance);
+        }
 
     } catch (err) {
         const lastEl = messagesEl.lastElementChild;
@@ -329,6 +339,57 @@ function autoResizeInput() {
     inputEl.style.height = Math.min(inputEl.scrollHeight, 150) + "px";
 }
 
+// ── Performance Metrics ─────────────────────────────────────────────────────
+
+/**
+ * Render a performance metrics bar below a message element.
+ * @param {HTMLElement} messageEl  - The message DOM element.
+ * @param {object}      perf      - Performance data from the server.
+ */
+function showPerformanceMetrics(messageEl, perf) {
+    // Remove any existing metrics bar on this message
+    const existing = messageEl.querySelector(".perf-metrics");
+    if (existing) existing.remove();
+
+    const bar = document.createElement("div");
+    bar.className = "perf-metrics";
+
+    const items = [];
+    if (perf.tokens_per_second !== undefined) {
+        items.push(`<span class="perf-item">⚡ <strong>${perf.tokens_per_second}</strong> tok/s</span>`);
+    }
+    if (perf.packets_per_second !== undefined) {
+        items.push(`<span class="perf-item">📡 <strong>${perf.packets_per_second}</strong> PPS</span>`);
+    }
+    if (perf.tokens_generated !== undefined) {
+        items.push(`<span class="perf-item">📝 <strong>${perf.tokens_generated}</strong> tokens</span>`);
+    }
+    if (perf.generation_time_s !== undefined) {
+        items.push(`<span class="perf-item">⏱️ <strong>${perf.generation_time_s}</strong>s</span>`);
+    }
+
+    bar.innerHTML = items.join("");
+    messageEl.appendChild(bar);
+    scrollToBottom();
+}
+
+/**
+ * Toggle performance metrics display on/off.
+ */
+function togglePerformance() {
+    state.showPerformance = !state.showPerformance;
+    const btn = $("#toggle-perf-btn");
+    if (btn) {
+        btn.textContent = state.showPerformance ? "📊 Metrics: ON" : "📊 Metrics: OFF";
+        btn.classList.toggle("perf-on", state.showPerformance);
+        btn.classList.toggle("perf-off", !state.showPerformance);
+    }
+    // Hide/show existing metrics bars
+    document.querySelectorAll(".perf-metrics").forEach((el) => {
+        el.style.display = state.showPerformance ? "" : "none";
+    });
+}
+
 // ── Event Listeners ─────────────────────────────────────────────────────────
 
 sendBtn.addEventListener("click", sendMessage);
@@ -343,6 +404,10 @@ inputEl.addEventListener("keydown", (e) => {
 inputEl.addEventListener("input", autoResizeInput);
 
 loadModelBtn.addEventListener("click", loadModel);
+
+// Performance toggle
+const perfBtn = $("#toggle-perf-btn");
+if (perfBtn) perfBtn.addEventListener("click", togglePerformance);
 
 // Slider value displays
 tempSlider.addEventListener("input", () => {

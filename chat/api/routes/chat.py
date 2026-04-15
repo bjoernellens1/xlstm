@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
@@ -109,6 +110,11 @@ async def chat_completion(
             "generation_time_s": result["generation_time_s"],
             "tokens_per_second": result["tokens_per_second"],
         },
+        performance={
+            "tokens_per_second": result["tokens_per_second"],
+            "generation_time_s": result["generation_time_s"],
+            "tokens_generated": result["tokens_generated"],
+        },
     )
 
 
@@ -120,7 +126,8 @@ async def _stream_response(
     """Async generator that yields SSE-formatted token events.
 
     Each event contains a JSON payload with the generated token fragment.
-    A final ``[DONE]`` event signals the end of generation.
+    A final ``[DONE]`` event signals the end of generation and includes
+    performance metrics (tokens/sec, generation time, PPS).
 
     Args:
         engine: The inference engine.
@@ -130,14 +137,29 @@ async def _stream_response(
     Yields:
         SSE-formatted string events.
     """
+    token_count = 0
+    packet_count = 0
+    start_time = time.perf_counter()
+
     async for token in engine.generate_stream(
         prompt=prompt,
         max_new_tokens=request.max_new_tokens,
         temperature=request.temperature,
         top_k=request.top_k,
     ):
+        token_count += 1
+        packet_count += 1
         data = json.dumps({"token": token})
         yield f"data: {data}\n\n"
+
+    elapsed = time.perf_counter() - start_time
+    perf = {
+        "tokens_generated": token_count,
+        "generation_time_s": round(elapsed, 3),
+        "tokens_per_second": round(token_count / elapsed, 1) if elapsed > 0 else 0,
+        "packets_per_second": round(packet_count / elapsed, 1) if elapsed > 0 else 0,
+    }
+    yield f"data: {json.dumps({'performance': perf})}\n\n"
     yield "data: [DONE]\n\n"
 
 
@@ -181,15 +203,33 @@ async def chat_websocket(
 
             prompt = _build_prompt(messages)
 
+            token_count = 0
+            ws_packet_count = 0
+            gen_start = time.perf_counter()
+
             async for token in engine.generate_stream(
                 prompt=prompt,
                 max_new_tokens=data.get("max_new_tokens"),
                 temperature=data.get("temperature"),
                 top_k=data.get("top_k"),
             ):
+                token_count += 1
+                ws_packet_count += 1
                 await websocket.send_json({"token": token})
 
-            await websocket.send_json({"done": True})
+            gen_elapsed = time.perf_counter() - gen_start
+            performance = {
+                "tokens_generated": token_count,
+                "generation_time_s": round(gen_elapsed, 3),
+                "tokens_per_second": (
+                    round(token_count / gen_elapsed, 1) if gen_elapsed > 0 else 0
+                ),
+                "packets_per_second": (
+                    round(ws_packet_count / gen_elapsed, 1) if gen_elapsed > 0 else 0
+                ),
+            }
+
+            await websocket.send_json({"done": True, "performance": performance})
 
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected.")
