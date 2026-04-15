@@ -1,0 +1,72 @@
+# xLSTM Chat – MkDocs Configuration
+# Auto-generates documentation from docstrings using mkdocstrings.
+#
+# Build: cd docs && mkdocs build
+# Serve: cd docs && mkdocs serve
+
+site_name: xLSTM Chat Documentation
+site_description: High-performance chat GUI and API for xLSTM language models
+site_url: https://github.com/bjoernellens1/xlstm
+
+repo_url: https://github.com/bjoernellens1/xlstm
+repo_name: bjoernellens1/xlstm
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: blue
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: blue
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            members_order: source
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Quick Start: getting-started.md
+      - Docker Deployment: docker.md
+  - API Reference:
+      - Overview: api/overview.md
+      - Chat Endpoints: api/chat.md
+      - Model Endpoints: api/models.md
+      - System Endpoints: api/system.md
+  - Architecture:
+      - Overview: architecture.md
+  - Development:
+      - Contributing: development.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - toc:
+      permalink: true

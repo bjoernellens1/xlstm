@@ -1,0 +1,79 @@
+# ── xLSTM Chat – Docker Compose ──────────────────────────────────────────────
+# Production deployment with optional GPU support.
+#
+# Usage:
+#   docker compose up                          # CPU mode
+#   docker compose --profile gpu up            # GPU mode (requires NVIDIA runtime)
+#   docker compose up --build                  # Rebuild and start
+#
+# Environment variables can be set in a .env file or passed directly.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── CPU variant ────────────────────────────────────────────────────────────
+  xlstm-chat:
+    build:
+      context: ..
+      dockerfile: chat/Dockerfile
+    container_name: xlstm-chat
+    ports:
+      - "${XLSTM_CHAT_PORT:-8000}:8000"
+    environment:
+      - XLSTM_CHAT_HOST=0.0.0.0
+      - XLSTM_CHAT_PORT=8000
+      - XLSTM_CHAT_MODEL_VARIANT=${XLSTM_CHAT_MODEL_VARIANT:-small}
+      - XLSTM_CHAT_DEVICE=cpu
+      - XLSTM_CHAT_MAX_NEW_TOKENS=${XLSTM_CHAT_MAX_NEW_TOKENS:-256}
+      - XLSTM_CHAT_TEMPERATURE=${XLSTM_CHAT_TEMPERATURE:-0.7}
+      - XLSTM_CHAT_LOG_LEVEL=${XLSTM_CHAT_LOG_LEVEL:-info}
+    volumes:
+      - model-cache:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── GPU variant ────────────────────────────────────────────────────────────
+  xlstm-chat-gpu:
+    build:
+      context: ..
+      dockerfile: chat/Dockerfile
+      args:
+        BASE_IMAGE: nvidia/cuda:12.4.0-runtime-ubuntu22.04
+    container_name: xlstm-chat-gpu
+    profiles:
+      - gpu
+    ports:
+      - "${XLSTM_CHAT_PORT:-8000}:8000"
+    environment:
+      - XLSTM_CHAT_HOST=0.0.0.0
+      - XLSTM_CHAT_PORT=8000
+      - XLSTM_CHAT_MODEL_VARIANT=${XLSTM_CHAT_MODEL_VARIANT:-large}
+      - XLSTM_CHAT_DEVICE=cuda
+      - XLSTM_CHAT_CHECKPOINT_PATH=${XLSTM_CHAT_CHECKPOINT_PATH:-}
+      - XLSTM_CHAT_MAX_NEW_TOKENS=${XLSTM_CHAT_MAX_NEW_TOKENS:-512}
+      - XLSTM_CHAT_TEMPERATURE=${XLSTM_CHAT_TEMPERATURE:-0.7}
+      - XLSTM_CHAT_LOG_LEVEL=${XLSTM_CHAT_LOG_LEVEL:-info}
+    volumes:
+      - model-cache:/app/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+volumes:
+  model-cache:
+    driver: local
