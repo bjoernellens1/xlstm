@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xLSTM Chat</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside id="sidebar">
+            <div class="sidebar-header">
+                <h1>xLSTM Chat</h1>
+                <span class="version">v0.1.0</span>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="sidebar-section">
+                <h3>Model</h3>
+                <div class="model-selector">
+                    <select id="model-variant">
+                        <option value="small">xLSTM Small (NeurIPS)</option>
+                        <option value="large">xLSTM Large (7B)</option>
+                    </select>
+                    <button id="load-model-btn" class="btn btn-primary">Load Model</button>
+                </div>
+                <div id="model-status" class="status-badge status-offline">
+                    No model loaded
+                </div>
+                <div id="model-info" class="model-info hidden"></div>
+            </div>
+
+            <!-- Generation Settings -->
+            <div class="sidebar-section">
+                <h3>Generation Settings</h3>
+                <div class="setting">
+                    <label for="temperature">Temperature: <span id="temp-value">0.7</span></label>
+                    <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7">
+                </div>
+                <div class="setting">
+                    <label for="max-tokens">Max Tokens: <span id="tokens-value">256</span></label>
+                    <input type="range" id="max-tokens" min="1" max="1024" step="1" value="256">
+                </div>
+                <div class="setting">
+                    <label for="top-k">Top-K: <span id="topk-value">50</span></label>
+                    <input type="range" id="top-k" min="0" max="100" step="1" value="50">
+                </div>
+            </div>
+
+            <!-- Performance Display -->
+            <div class="sidebar-section">
+                <h3>Performance</h3>
+                <button id="toggle-perf-btn" class="btn btn-toggle perf-on">📊 Metrics: ON</button>
+                <p class="setting-hint">Show tokens/sec, PPS, and timing after each response</p>
+            </div>
+
+            <!-- System Info -->
+            <div class="sidebar-section">
+                <h3>Links</h3>
+                <div class="links">
+                    <a href="/docs" target="_blank">📄 API Docs (Swagger)</a>
+                    <a href="/redoc" target="_blank">📕 API Docs (ReDoc)</a>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <p>Future: Vision-LSTM support</p>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main id="chat-area">
+            <div id="messages" class="messages">
+                <div class="welcome-message">
+                    <h2>Welcome to xLSTM Chat</h2>
+                    <p>Load a model from the sidebar to start chatting.</p>
+                    <div class="feature-cards">
+                        <div class="feature-card">
+                            <span class="feature-icon">⚡</span>
+                            <strong>Fast Inference</strong>
+                            <p>Streaming token generation with WebSocket</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">🔧</span>
+                            <strong>Two Variants</strong>
+                            <p>Choose small (CPU) or large (GPU) xLSTM</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">🔌</span>
+                            <strong>Full API</strong>
+                            <p>REST + WebSocket API with auto-docs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="typing-indicator" class="typing-indicator hidden">
+                <span></span><span></span><span></span>
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                    <textarea
+                        id="message-input"
+                        placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
+                        rows="1"
+                    ></textarea>
+                    <button id="send-btn" class="btn btn-send" disabled>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13"></path>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

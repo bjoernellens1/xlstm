@@ -1,0 +1,23 @@
+# xLSTM Chat – Python dependencies
+# Core API
+fastapi>=0.104.0,<1.0.0
+uvicorn[standard]>=0.24.0,<1.0.0
+pydantic>=2.0.0,<3.0.0
+python-multipart>=0.0.6
+
+# Templating & static files
+jinja2>=3.1.0
+
+# xLSTM dependencies (inherited from parent project)
+torch>=2.0.0
+tokenizers>=0.15.0
+
+# Documentation
+mkdocs>=1.5.0
+mkdocs-material>=9.0.0
+mkdocstrings[python]>=0.24.0
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0
